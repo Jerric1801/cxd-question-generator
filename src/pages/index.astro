@@ -15,6 +15,7 @@ import '../styles/global.css';
             <p id="question-display">Click the button to get a question!</p>
             <div id="loader" class="hidden"></div>
         </div>
+        <div id="facilitator-display"></div>
         <button id="new-question-btn">
             Get New Question
         </button>
@@ -24,13 +25,97 @@ import '../styles/global.css';
         const questionDisplay = document.getElementById('question-display');
         const newQuestionBtn = document.getElementById('new-question-btn') as HTMLButtonElement;
         const loader = document.getElementById('loader');
+        const facilitatorDisplay = document.getElementById('facilitator-display');
+        const mainElement = document.querySelector('main');
 
-        if (questionDisplay && newQuestionBtn && loader) {
+        // Pop song lyrics for button text (3-4 words with verb + noun)
+        const buttonTexts = [
+            "Dance the Night",
+            "Shake it Off",
+            "Break the Rules",
+            "Light the Fire",
+            "Move the Mountains",
+            "Touch the Sky",
+            "Break the Chain",
+            "Light the Way",
+            "Dance with Me",
+            "Shake the World",
+            "Break the Mold",
+            "Light the Spark",
+            "Move the Earth",
+            "Touch the Stars",
+            "Break the Ice",
+            "Light the Flame"
+        ];
+
+        // Sample team members (you can replace with actual team names)
+        const teamMembers = [
+            "Alex", "Sam", "Jordan", "Taylor", "Casey", "Morgan", 
+            "Riley", "Quinn", "Avery", "Blake", "Drew", "Emery",
+            "Finley", "Gray", "Harper", "Indigo", "Jules", "Kai"
+        ];
+
+        let recentFacilitators: string[] = [];
+        let currentButtonTextIndex = 0;
+
+        function updateButtonText() {
+            if (newQuestionBtn) {
+                newQuestionBtn.textContent = buttonTexts[currentButtonTextIndex];
+                currentButtonTextIndex = (currentButtonTextIndex + 1) % buttonTexts.length;
+            }
+        }
+
+        function selectNextFacilitator(): string {
+            const availableMembers = teamMembers.filter(member => 
+                !recentFacilitators.includes(member)
+            );
+            
+            if (availableMembers.length === 0) {
+                // If all members have been recent facilitators, reset the list
+                recentFacilitators = [];
+                return teamMembers[Math.floor(Math.random() * teamMembers.length)];
+            }
+            
+            const selectedMember = availableMembers[Math.floor(Math.random() * availableMembers.length)];
+            
+            // Add to recent facilitators and keep only last 3
+            recentFacilitators.push(selectedMember);
+            if (recentFacilitators.length > 3) {
+                recentFacilitators.shift();
+            }
+            
+            return selectedMember;
+        }
+
+        function showFacilitator(facilitator: string) {
+            if (facilitatorDisplay) {
+                facilitatorDisplay.textContent = `Next Facilitator: ${facilitator}`;
+                facilitatorDisplay.classList.add('show');
+            }
+        }
+
+        function animatePage() {
+            if (mainElement) {
+                mainElement.classList.add('animate');
+                setTimeout(() => {
+                    mainElement.classList.remove('animate');
+                }, 600);
+            }
+        }
+
+        if (questionDisplay && newQuestionBtn && loader && facilitatorDisplay) {
+            // Initialize button text
+            updateButtonText();
+
             newQuestionBtn.addEventListener('click', async () => {
                 // Show loader and hide text
                 loader.classList.remove('hidden');
                 questionDisplay.classList.add('hidden');
+                facilitatorDisplay.classList.remove('show');
                 newQuestionBtn.disabled = true;
+
+                // Animate the page
+                animatePage();
 
                 try {
                     // Get API key from environment variable
@@ -66,6 +151,14 @@ import '../styles/global.css';
                     const data = await response.json();
                     const question = data.candidates[0].content.parts[0].text.trim();
                     questionDisplay.textContent = question;
+
+                    // Select and show next facilitator
+                    const nextFacilitator = selectNextFacilitator();
+                    showFacilitator(nextFacilitator);
+
+                    // Update button text
+                    updateButtonText();
+
                 } catch (error) {
                     console.error("Error fetching question:", error);
                     questionDisplay.textContent = "Sorry, something went wrong. Please try again!";
