@@ -50,7 +50,9 @@ export const handler = async (event) => {
 
   if (event.httpMethod === 'PUT') {
     const token = (event.headers.authorization || '').replace(/^Bearer\s+/i, '');
-    if (!token || token !== process.env.ADMIN_TOKEN) {
+    // Require ADMIN_TOKEN only when writing to real blob storage (Netlify prod/preview with store available)
+    const mustAuth = Boolean(store) && (IS_NETLIFY && !IS_NETLIFY_DEV);
+    if (mustAuth && (!token || token !== process.env.ADMIN_TOKEN)) {
       return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorized' }) };
     }
 
@@ -69,14 +71,14 @@ export const handler = async (event) => {
     try {
       if (!store) {
         DEV_MEMORY = cleaned;
-        return { statusCode: 200, headers, body: JSON.stringify({ ok: true, dev: true }) };
+        return { statusCode: 200, headers, body: JSON.stringify({ ok: true, storage: 'memory' }) };
       }
       await store.set(KEY, JSON.stringify(cleaned));
-      return { statusCode: 200, headers, body: JSON.stringify({ ok: true }) };
+      return { statusCode: 200, headers, body: JSON.stringify({ ok: true, storage: 'blob' }) };
     } catch (e) {
       if (!store || IS_NETLIFY_DEV) {
         DEV_MEMORY = cleaned;
-        return { statusCode: 200, headers, body: JSON.stringify({ ok: true, dev: true }) };
+        return { statusCode: 200, headers, body: JSON.stringify({ ok: true, storage: 'memory' }) };
       }
       return { statusCode: 500, headers, body: JSON.stringify({ error: 'Failed to write storage' }) };
     }
