@@ -2,7 +2,7 @@
 /// <reference types="astro/client" />
 
 interface ImportMetaEnv {
-  readonly PUBLIC_GEMINI_API_KEY: string;
+  // no public key needed on client
 }
 
 interface ImportMeta {

@@ -10,7 +10,21 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@netlify/blobs": "^6.2.0",
     "astro": "^4.5.12"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "netlify-cli": "^17.28.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "dev:netlify": "netlify dev"
+  },
+  "engines": {
+    "node": ">=18"
+  }
 }

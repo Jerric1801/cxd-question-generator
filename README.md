@@ -15,7 +15,7 @@ A simple static web application built with Astro that generates random icebreake
 
 - Node.js (version 18 or higher)
 - npm or yarn
-- Google Gemini API key
+- Google Gemini API key (stored as a private environment variable in Netlify)
 
 ## Setup
 
@@ -32,10 +32,9 @@ A simple static web application built with Astro that generates random icebreake
 
 3. **Set up environment variables**
    
-   Create a `.env` file in the root directory:
-   ```env
-   PUBLIC_GEMINI_API_KEY=your_gemini_api_key_here
-   ```
+   In Netlify Site settings > Environment variables, add:
+   - `GEMINI_API_KEY` = your Gemini API key (private)
+   - `ADMIN_TOKEN` = any strong random string for editing the people list
    
    To get a Gemini API key:
    1. Go to [Google AI Studio](https://makersuite.google.com/app/apikey)
@@ -100,16 +99,14 @@ cxd-question-generator/
 
 ## How It Works
 
-The application uses the Google Gemini API directly from the client-side. The API key is read from the `PUBLIC_GEMINI_API_KEY` environment variable and used to make requests to the Gemini API to generate random icebreaker questions.
-
-**Note:** The `PUBLIC_` prefix is required for environment variables to be accessible in the client-side code.
+The application calls Netlify Functions on the server to generate questions and manage the shared people list. The Gemini API key stays private on the server. Editing the people list requires the `ADMIN_TOKEN`.
 
 ## Technologies Used
 
 - **Astro** - Modern web framework for static site generation
 - **Tailwind CSS** - Utility-first CSS framework (locally installed)
 - **Google Gemini API** - AI-powered question generation
-- **Netlify** - Hosting and deployment platform
+- **Netlify** - Hosting and deployment platform with Functions and Blobs storage
 
 ## Contributing
 

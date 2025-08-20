@@ -1,0 +1,372 @@
+---
+import '../styles/global.css';
+---
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Team Members</title>
+  <meta name="description" content="Manage the shared list of team members for facilitator selection." />
+  <link rel="prefetch" href="/" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style is:global>
+    :root {
+      --bg: #F7F8FA;
+      --surface: #FFFFFF;
+      --primary: #007AFF;
+      --primary-hover: #005ECC;
+      --text: #1D232D;
+      --muted: #8A94A6;
+      --border: #DDE2E8;
+      --destructive: #E53935;
+      --success: #22C55E;
+    }
+
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    }
+
+    .tm-page { min-height: 100%; display: flex; flex-direction: column; }
+    .tm-container { width: 100%; max-width: 880px; margin: 0 auto; padding: 24px 20px 96px; }
+
+    /* Minimal header */
+    .tm-page .tm-header { font-size: 22px; font-weight: 600; margin: 4px 0 8px; }
+    .tm-page .tm-sub { color: var(--muted); font-size: 14px; margin-bottom: 16px; }
+
+    /* Minimal top navigation override (scoped to this page) */
+    .tm-page .top-nav { position: sticky; top: 0; z-index: 20; padding: 8px 20px; background: transparent; backdrop-filter: none; }
+    .tm-page .top-nav .link { display: inline-flex; align-items: center; gap: 6px; padding: 0; background: transparent; border: none; color: var(--muted); font-weight: 500; text-decoration: none; }
+    .tm-page .top-nav .link:hover { color: var(--text); text-decoration: underline; }
+
+    /* Add Member card */
+    .tm-page .add-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; box-shadow: 0 1px 1px rgba(16,24,40,0.02); display: flex; gap: 12px; align-items: center; }
+    .tm-page .add-input { flex: 1; font-size: 16px; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border); outline: none; background: #fff; color: var(--text); }
+    .tm-page .add-input::placeholder { color: #A1A9B6; }
+    .tm-page .add-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,122,255,0.15); }
+    .tm-page .add-input:disabled { background: #F0F2F5; border-color: #E5EAF0; color: #A1A9B6; }
+    .tm-page .add-btn { height: 44px; padding: 0 16px; border-radius: 10px; background: var(--primary); color: #fff; border: none; font-weight: 600; cursor: pointer; }
+    .tm-page .add-btn:hover { background: var(--primary-hover); }
+    .tm-page .add-btn:disabled { background: #A8C5E5; cursor: not-allowed; }
+
+    /* Search bar */
+    .tm-page .search-wrap { margin-top: 16px; }
+    .tm-page .search-input { width: 100%; font-size: 16px; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border); outline: none; background: #fff; color: var(--text); }
+    .tm-page .search-input::placeholder { color: #A1A9B6; }
+    .tm-page .search-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,122,255,0.12); }
+
+    /* Member list */
+    .tm-page .member-list { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+    .tm-page .member-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 1px 1px rgba(16,24,40,0.02); transition: background-color 120ms ease, border-color 120ms ease, transform 120ms ease, opacity 220ms ease, max-height 260ms ease, margin 260ms ease, padding 260ms ease; max-height: 88px; }
+    .tm-page .member-item:hover { background: #FBFCFE; border-color: #cfd8e3; }
+    .member-item:hover .remove-btn { color: var(--destructive); }
+    .tm-page .member-name { font-size: 16px; font-weight: 500; color: var(--text); }
+    .tm-page .remove-btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid transparent; display: inline-flex; align-items: center; justify-content: center; background: transparent; color: var(--muted); cursor: pointer; }
+    .tm-page .remove-btn:hover { background: rgba(229,57,53,0.06); color: var(--destructive); }
+
+    .tm-page .member-item.added { animation: fadeSlideIn 200ms ease-out; }
+    .tm-page .member-item.removing { opacity: 0; max-height: 0; margin-top: 0; margin-bottom: 0; padding-top: 0; padding-bottom: 0; overflow: hidden; }
+    @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Loading skeleton */
+    .tm-page .skeleton { display: grid; gap: 12px; margin-top: 16px; }
+    .tm-page .skeleton .row { height: 56px; border-radius: 12px; background: linear-gradient(90deg, #e9edf3 25%, #f3f6fb 37%, #e9edf3 63%); background-size: 400% 100%; animation: shimmer 1.1s ease-in-out infinite; border: 1px solid var(--border); }
+    @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+
+    /* Empty state */
+    .tm-page .empty-state { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 40px 16px; margin-top: 16px; text-align: center; color: var(--muted); }
+    .tm-page .empty-state .title { color: var(--text); font-weight: 600; margin-top: 8px; }
+    .tm-page .empty-state .hint { margin-top: 4px; }
+
+    /* Sticky save bar */
+    .tm-page .save-bar { position: fixed; left: 0; right: 0; bottom: 0; background: #FFFFFF; border-top: 1px solid var(--border); box-shadow: 0 -1px 2px rgba(16,24,40,0.04); }
+    .tm-page .save-inner { max-width: 880px; margin: 0 auto; padding: 12px 20px; display: flex; gap: 12px; align-items: center; }
+    .tm-page .token-wrap { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+    .tm-page .token-input { width: 100%; height: 44px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--border); outline: none; }
+    .tm-page .token-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,122,255,0.15); }
+    .tm-page .token-input.error { border-color: var(--destructive); box-shadow: 0 0 0 3px rgba(229,57,53,0.10); }
+    .tm-page .token-error { color: var(--destructive); font-size: 13px; min-height: 16px; }
+    .tm-page .save-btn { height: 44px; padding: 0 16px; border-radius: 10px; border: none; background: var(--primary); color: #fff; font-weight: 600; cursor: pointer; }
+    .tm-page .save-btn:hover { background: var(--primary-hover); }
+    .tm-page .save-btn:disabled { background: #A8C5E5; cursor: not-allowed; }
+    .tm-page .save-btn.success { background: var(--success); }
+
+    /* Utility */
+    .tm-page .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 1px, 1px); white-space: nowrap; border: 0; }
+
+    /* Focus styles for accessibility */
+    .tm-page .add-btn:focus-visible, .tm-page .save-btn:focus-visible, .tm-page .remove-btn:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+    .tm-page .add-input:focus-visible, .tm-page .search-input:focus-visible, .tm-page .token-input:focus-visible { box-shadow: 0 0 0 3px rgba(0,122,255,0.20); }
+
+    /* Selection count badge */
+    .tm-page .count-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 26px; height: 26px; padding: 0 8px; border-radius: 999px; background: #F3F4F6; border: 0; color: #4B5563; font-size: 12px; margin-right: 10px; }
+
+    @media (max-width: 640px) {
+      .tm-page .add-card { flex-direction: column; align-items: stretch; }
+      .tm-page .save-inner { flex-direction: column; align-items: stretch; }
+      .tm-page .save-btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="tm-page">
+    <nav class="top-nav">
+      <a href="/" class="link">← Back to generator</a>
+    </nav>
+    <div class="tm-container">
+      <header>
+        <h1 class="tm-header">Members</h1>
+        <p class="tm-sub">Add names individually or paste a comma-separated list. Changes are shared for everyone.</p>
+      </header>
+
+      <section aria-labelledby="add-member" class="add-card" id="add-form">
+        <label for="new-person-input" id="add-member" class="visually-hidden">Add member(s)</label>
+        <input id="new-person-input" class="add-input" type="text" placeholder="Add name or paste a comma-separated list..." />
+        <button id="add-person-btn" class="add-btn" aria-label="Add member">Add</button>
+      </section>
+
+      <section class="search-wrap" aria-label="Search members">
+        <input id="search-input" class="search-input" type="text" placeholder="Search members..." />
+      </section>
+
+      <div id="skeleton" class="skeleton" aria-hidden="true" role="status">
+        <div class="row"></div>
+        <div class="row"></div>
+        <div class="row"></div>
+        <div class="row"></div>
+      </div>
+
+      <section id="member-list" class="member-list" aria-live="polite"></section>
+    </div>
+
+    <footer class="save-bar">
+      <div class="save-inner">
+        <div class="token-wrap">
+          <label for="admin-token-input" class="visually-hidden">Admin Token</label>
+          <input id="admin-token-input" class="token-input" type="password" placeholder="Admin Token" />
+          <div id="token-error" class="token-error" role="alert"></div>
+        </div>
+        <button id="save-people-btn" class="save-btn">Save List</button>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    const listEl = document.getElementById('member-list') as HTMLElement | null;
+    const newInput = document.getElementById('new-person-input') as HTMLInputElement | null;
+    const addBtn = document.getElementById('add-person-btn') as HTMLButtonElement | null;
+    const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
+    const saveBtn = document.getElementById('save-people-btn') as HTMLButtonElement | null;
+    const tokenInput = document.getElementById('admin-token-input') as HTMLInputElement | null;
+    const tokenError = document.getElementById('token-error') as HTMLElement | null;
+    const skeleton = document.getElementById('skeleton') as HTMLElement | null;
+
+    let teamMembers: string[] = [];
+    let newlyAdded = new Set<string>();
+    let filterQuery = '';
+
+    function dedupeStrings(arr: unknown[]): string[] {
+      const set = new Set<string>();
+      arr.forEach((s) => { const v = String(s as unknown).trim(); if (v) set.add(v); });
+      return Array.from(set);
+    }
+
+    function renderEmptyState(isFiltered: boolean = false) {
+      if (!listEl) return;
+      listEl.innerHTML = '';
+      const empty = document.createElement('div');
+      empty.className = 'empty-state';
+      empty.innerHTML = `
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M16 11c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM8 11c1.657 0 3-1.343 3-3S9.657 5 8 5 5 6.343 5 8s1.343 3 3 3zM8 13c-2.761 0-5 2.239-5 5v.5c0 .276.224.5.5.5h9c.276 0 .5-.224.5-.5V18c0-2.761-2.239-5-5-5zm8 0c-.806 0-1.565.197-2.238.546 1.348 1.099 2.238 2.749 2.238 4.654v.3c0 .277.224.5.5.5h5c.276 0 .5-.223.5-.5V18c0-2.761-2.239-5-5-5z" fill="#8A94A6"/>
+        </svg>
+        <div class="title">${isFiltered ? 'No matching members' : 'Your team is empty'}</div>
+        <div class="hint">${isFiltered ? 'Try a different search.' : 'Use the form above to start adding members.'}</div>
+      `;
+      listEl.appendChild(empty);
+    }
+
+    function getVisibleMembers(): string[] {
+      const q = (filterQuery || '').toLowerCase();
+      if (!q) return teamMembers;
+      return teamMembers.filter((n) => n.toLowerCase().includes(q));
+    }
+
+    function getSelectionCounts(): Record<string, number> {
+      try { const raw = localStorage.getItem('memberSelectionCounts') || '{}'; const obj = JSON.parse(raw); return (obj && typeof obj === 'object') ? obj as Record<string, number> : {}; } catch { return {}; }
+    }
+
+    function renderList() {
+      if (!listEl) return;
+      listEl.innerHTML = '';
+      const visible = getVisibleMembers();
+      if (visible.length === 0) { renderEmptyState(Boolean(filterQuery)); return; }
+      visible.forEach((name) => {
+        const item = document.createElement('div');
+        item.className = 'member-item';
+        item.setAttribute('draggable', 'true');
+        item.dataset.name = name;
+        if (newlyAdded.has(name)) item.classList.add('added');
+
+        const left = document.createElement('div');
+        left.style.display = 'flex';
+        left.style.alignItems = 'center';
+        const badge = document.createElement('span');
+        badge.className = 'count-badge';
+        const counts = getSelectionCounts();
+        badge.textContent = String(Number.isFinite(counts[name]) ? counts[name] : 0);
+        const span = document.createElement('div');
+        span.className = 'member-name';
+        span.textContent = name;
+        left.appendChild(badge);
+        left.appendChild(span);
+
+        const btn = document.createElement('button');
+        btn.className = 'remove-btn';
+        btn.setAttribute('aria-label', `Remove ${name}`);
+        btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 3h6a1 1 0 0 1 1 1v2h4v2h-1v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V8H4V6h4V4a1 1 0 0 1 1-1zm2 3h2V5h-2v1zM7 8v11h10V8H7z"/></svg>';
+        btn.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); btn.click(); } });
+        btn.addEventListener('click', () => {
+          // Animate out then remove
+          const onEnd = () => {
+            item.removeEventListener('transitionend', onEnd);
+            teamMembers = teamMembers.filter((m) => m !== name);
+            localStorage.setItem('teamMembers', JSON.stringify(teamMembers));
+            renderList();
+          };
+          item.classList.add('removing');
+          item.addEventListener('transitionend', onEnd);
+        });
+
+        // Drag-and-drop reordering
+        item.addEventListener('dragstart', (e: DragEvent) => {
+          e.dataTransfer?.setData('text/plain', name);
+          item.classList.add('dragging');
+        });
+        item.addEventListener('dragend', () => { item.classList.remove('dragging'); });
+        item.addEventListener('dragover', (e: DragEvent) => { e.preventDefault(); });
+        item.addEventListener('drop', (e: DragEvent) => {
+          e.preventDefault();
+          const draggedName = e.dataTransfer?.getData('text/plain');
+          if (!draggedName || draggedName === name) return;
+          const fromIndex = teamMembers.indexOf(draggedName);
+          const toIndex = teamMembers.indexOf(name);
+          if (fromIndex < 0 || toIndex < 0) return;
+          const updated = [...teamMembers];
+          updated.splice(toIndex, 0, updated.splice(fromIndex, 1)[0]);
+          teamMembers = updated;
+          localStorage.setItem('teamMembers', JSON.stringify(teamMembers));
+          renderList();
+        });
+
+        item.appendChild(left);
+        item.appendChild(btn);
+        listEl.appendChild(item);
+      });
+      newlyAdded.clear();
+    }
+
+    function updateAddButtonState() {
+      const value = (newInput?.value || '').trim();
+      if (addBtn) addBtn.disabled = value.length === 0;
+    }
+
+    function addFromInput() {
+      const value = (newInput?.value || '').trim();
+      if (!value) return;
+      const names = value.split(',').map(v => v.trim()).filter(Boolean);
+      const merged = dedupeStrings([ ...names, ...(teamMembers as string[]) ]);
+      newlyAdded = new Set(names);
+      teamMembers = merged;
+      renderList();
+      if (newInput) newInput.value = '';
+      updateAddButtonState();
+    }
+
+    async function fetchPeople() {
+      try {
+        const res = await fetch('/api/people');
+        if (!res.ok) throw new Error('Failed to load people');
+        const people: unknown = await res.json();
+        if (Array.isArray(people)) {
+          teamMembers = dedupeStrings(people as unknown[]);
+          localStorage.setItem('teamMembers', JSON.stringify(teamMembers));
+        }
+      } catch (e) {
+        const fallback = JSON.parse(localStorage.getItem('teamMembers') || '[]') as unknown;
+        teamMembers = Array.isArray(fallback) ? (fallback as string[]) : [];
+      } finally {
+        if (skeleton) skeleton.style.display = 'none';
+        // initialize search from URL
+        const params = new URLSearchParams(window.location.search);
+        const q = params.get('q') || '';
+        if (searchInput) searchInput.value = q;
+        filterQuery = q;
+        renderList();
+      }
+    }
+
+    async function savePeople() {
+      if (!saveBtn) return;
+      if (tokenError) tokenError.textContent = '';
+      tokenInput?.classList.remove('error');
+
+      const token = (tokenInput?.value || '').trim();
+      const originalText = saveBtn.textContent || 'Save List';
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
+
+      try {
+        const res = await fetch('/api/people', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify(teamMembers),
+        });
+
+        if (!res.ok) {
+          const text = await res.text();
+          if (res.status === 401) {
+            if (tokenInput) tokenInput.classList.add('error');
+            if (tokenError) tokenError.textContent = 'Invalid Admin Token. Please try again.';
+          } else {
+            if (tokenError) tokenError.textContent = text || 'Save failed.';
+          }
+          return;
+        }
+
+        localStorage.setItem('teamMembers', JSON.stringify(teamMembers));
+        saveBtn.classList.add('success');
+        saveBtn.textContent = 'Saved ✓';
+        setTimeout(() => { if (saveBtn) { saveBtn.classList.remove('success'); saveBtn.textContent = originalText; saveBtn.disabled = false; } }, 1200);
+        return;
+      } catch (e) {
+        if (tokenError) tokenError.textContent = 'Network error. Please try again.';
+      } finally {
+        if (!saveBtn.classList.contains('success')) { saveBtn.disabled = false; saveBtn.textContent = originalText; }
+      }
+    }
+
+    addBtn?.addEventListener('click', addFromInput);
+    newInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') addFromInput(); });
+    newInput?.addEventListener('input', updateAddButtonState);
+    searchInput?.addEventListener('input', (e) => {
+      filterQuery = (e.target as HTMLInputElement).value || '';
+      const params = new URLSearchParams(window.location.search);
+      if (filterQuery) { params.set('q', filterQuery); } else { params.delete('q'); }
+      const newUrl = `${window.location.pathname}?${params.toString()}`;
+      window.history.replaceState({}, '', newUrl);
+      renderList();
+    });
+    saveBtn?.addEventListener('click', savePeople);
+    updateAddButtonState();
+    fetchPeople();
+  </script>
+</body>
+</html>
+

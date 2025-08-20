@@ -9,53 +9,183 @@ import '../styles/global.css';
     <title>Question Generator</title>
 </head>
 <body>
+    <nav class="top-nav">
+        <a href="/members" class="link">Manage members</a>
+    </nav>
     <main>
         <h1>Question Generator</h1>
         <div id="question-container">
             <p id="question-display">Click the button to get a question!</p>
-            <div id="loader" class="hidden"></div>
+            <div id="loader" class="hidden">
+                <div class="loader-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+                <div class="loader-pulse" aria-hidden="true"></div>
+                <div class="loader-skeleton" aria-hidden="true">
+                    <div class="line"></div>
+                    <div class="line"></div>
+                    <div class="line"></div>
+                    <div class="line"></div>
+                </div>
+            </div>
         </div>
         <div id="facilitator-display"></div>
+        <div class="topic-row">
+            <label for="topic-select">Topic</label>
+            <select id="topic-select" aria-label="Question topic">
+                <option value="general" selected>General</option>
+                <option value="singapore">Singapore</option>
+                <option value="wellness">Wellness</option>
+                <option value="collaboration">Collaboration</option>
+            </select>
+        </div>
         <button id="new-question-btn">
             Get New Question
         </button>
     </main>
 
     <script>
-        const questionDisplay = document.getElementById('question-display');
-        const newQuestionBtn = document.getElementById('new-question-btn') as HTMLButtonElement;
-        const loader = document.getElementById('loader');
-        const facilitatorDisplay = document.getElementById('facilitator-display');
-        const mainElement = document.querySelector('main');
+        const questionDisplay = document.getElementById('question-display') as HTMLElement | null;
+        const newQuestionBtn = document.getElementById('new-question-btn') as HTMLButtonElement | null;
+        const loader = document.getElementById('loader') as HTMLElement | null;
+        const facilitatorDisplay = document.getElementById('facilitator-display') as HTMLElement | null;
+        const mainElement = document.querySelector('main') as HTMLElement | null;
+        // members managed on /members
+        const topicSelect = document.getElementById('topic-select') as HTMLSelectElement | null;
 
-        // Pop song lyrics for button text (3-4 words with verb + noun)
-        const buttonTexts = [
-            "Dance the Night",
-            "Shake it Off",
-            "Break the Rules",
-            "Light the Fire",
-            "Move the Mountains",
-            "Touch the Sky",
-            "Break the Chain",
-            "Light the Way",
-            "Dance with Me",
-            "Shake the World",
-            "Break the Mold",
-            "Light the Spark",
-            "Move the Earth",
-            "Touch the Stars",
-            "Break the Ice",
-            "Light the Flame"
-        ];
+        // Theme variables per topic
+        const themes: Record<string, Record<string, string>> = {
+            general: {
+                '--font-family': "Quicksand, sans-serif",
+                '--app-bg': 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
+                '--main-bg': 'linear-gradient(145deg, #e8f5e8 0%, #f0f8f0 50%, #f8faf8 100%)',
+                '--text-color': '#5d5f7a',
+                '--accent-color': '#a8e6cf',
+                '--button-bg': 'linear-gradient(135deg, #a8e6cf 0%, #b8f2e6 50%, #c7f0d8 100%)',
+                '--button-text-color': '#5d5f7a',
+                '--panel-border-color': '#b8f2e6',
+                '--page-anim-name': 'pageShake',
+                '--page-anim-duration': '0.6s',
+                '--page-anim-timing': 'ease-in-out',
+                '--bg-overlay-image': 'radial-gradient( circle at 20% 30%, rgba(168, 230, 207, 0.15) 0%, transparent 50% ), radial-gradient( circle at 80% 70%, rgba(168, 230, 207, 0.15) 0%, transparent 50% )',
+                '--bg-overlay-anim': 'floatDots',
+                '--bg-overlay-duration': '18s',
+                '--button-hover-anim-name': 'hoverPulse'
+            },
+            singapore: {
+                '--font-family': '"Plus Jakarta Sans", sans-serif',
+                '--app-bg': '#f5f5f5',
+                '--main-bg': '#ffffff',
+                '--text-color': '#111111',
+                '--accent-color': '#ed2939',
+                '--button-bg': '#ed2939',
+                '--button-text-color': '#ffffff',
+                '--panel-border-color': '#e5e5e5',
+                '--page-anim-name': 'pageShake',
+                '--page-anim-duration': '0.45s',
+                '--page-anim-timing': 'cubic-bezier(0.36, 0.07, 0.19, 0.97)',
+                '--bg-overlay-image': 'linear-gradient(45deg, rgba(237,41,57,0.05) 25%, transparent 25%, transparent 50%, rgba(237,41,57,0.05) 50%, rgba(237,41,57,0.05) 75%, transparent 75%, transparent), linear-gradient(45deg, rgba(237,41,57,0.05) 25%, transparent 25%, transparent 50%, rgba(237,41,57,0.05) 50%, rgba(237,41,57,0.05) 75%, transparent 75%, transparent)',
+                '--bg-overlay-anim': 'tileSlide',
+                '--bg-overlay-duration': '14s',
+                '--bg-overlay-blur': '0px',
+                '--button-hover-anim-name': 'hoverWiggle'
+            },
+            wellness: {
+                '--font-family': 'Lora, serif',
+                '--app-bg': '#f0f7f4',
+                '--main-bg': '#ffffff',
+                '--text-color': '#2d4739',
+                '--accent-color': '#4a9372',
+                '--button-bg': '#4a9372',
+                '--button-text-color': '#ffffff',
+                '--panel-border-color': '#cfe8dd',
+                '--page-anim-name': 'pageFade',
+                '--page-anim-duration': '0.8s',
+                '--page-anim-timing': 'ease-in-out',
+                '--bg-overlay-image': 'radial-gradient( circle at 30% 40%, rgba(74,147,114,0.12) 0%, transparent 50% ), radial-gradient( circle at 70% 60%, rgba(74,147,114,0.12) 0%, transparent 50% )',
+                '--bg-overlay-anim': 'softPulse',
+                '--bg-overlay-duration': '22s',
+                '--bg-overlay-blur': '2px',
+                '--button-hover-anim-name': 'hoverGlow'
+            },
+            collaboration: {
+                '--font-family': 'Figtree, sans-serif',
+                '--app-bg': '#f8f9fa',
+                '--main-bg': '#ffffff',
+                '--text-color': '#0f172a',
+                '--accent-color': '#17a2b8',
+                '--button-bg': '#17a2b8',
+                '--button-text-color': '#ffffff',
+                '--panel-border-color': '#dbe2ea',
+                '--page-anim-name': 'pageFlip',
+                '--page-anim-duration': '0.5s',
+                '--page-anim-timing': 'ease-out',
+                '--bg-overlay-image': 'radial-gradient(circle at 20% 30%, rgba(23,162,184,0.1) 0%, transparent 45%), radial-gradient(circle at 80% 70%, rgba(255,193,7,0.08) 0%, transparent 45%)',
+                '--bg-overlay-anim': 'nodeOrbit',
+                '--bg-overlay-duration': '16s',
+                '--button-hover-anim-name': 'hoverBounce'
+            }
+        };
 
-        // Sample team members (you can replace with actual team names)
-        const teamMembers = [
-            "Alex", "Sam", "Jordan", "Taylor", "Casey", "Morgan", 
-            "Riley", "Quinn", "Avery", "Blake", "Drew", "Emery",
-            "Finley", "Gray", "Harper", "Indigo", "Jules", "Kai"
-        ];
+        function setBodyThemeClass(topic: string) {
+            const themeClassPrefix = 'theme-';
+            const body = document.body as HTMLBodyElement;
+            // Remove any existing theme-* class
+            body.className = (body.className || '').split(' ').filter(c => !c.startsWith(themeClassPrefix)).join(' ').trim();
+            body.classList.add(`${themeClassPrefix}${topic}`);
+        }
+
+        function applyTheme(topic: string) {
+            const theme = themes[topic] || themes.general;
+            for (const [key, value] of Object.entries(theme) as [string, string][]) {
+                document.documentElement.style.setProperty(key, value);
+            }
+            if (mainElement) {
+                mainElement.dataset.topic = topic;
+            }
+            setBodyThemeClass(topic);
+        }
+
+        // Per-topic button text sets
+        const topicButtonTexts: Record<string, string[]> = {
+            general: [
+                "Dance the Night","Shake it Off","Break the Rules","Light the Fire",
+                "Move the Mountains","Touch the Sky","Break the Chain","Light the Way",
+                "Dance with Me","Shake the World","Break the Mold","Light the Spark",
+                "Move the Earth","Touch the Stars","Break the Ice","Light the Flame"
+            ],
+            singapore: [
+                "Build the Future","Spark the City","Shape the Skyline","Light the Way",
+                "Design the Flow","Craft the Journey","Connect the Dots","Grow the Garden"
+            ],
+            wellness: [
+                "Breathe and Begin","Stretch the Mind","Calm the Waves","Hold the Space",
+                "Nourish the Heart","Steady the Breath","Soften the Edges","Trust the Process"
+            ],
+            collaboration: [
+                "Share the Board","Sketch the Idea","Bridge the Gaps","Sync the Team",
+                "Swap the Notes","Pitch the Concept","Frame the Problem","Ship the Win"
+            ]
+        };
+
+        let currentTopic: string = 'general';
+        let buttonTexts: string[] = topicButtonTexts[currentTopic];
+
+        // Team members state (fetched from server). Fallback to localStorage.
+        let teamMembers: string[] = [];
 
         let recentFacilitators: string[] = [];
+        function getSelectionCounts(): Record<string, number> {
+            try {
+                const raw = localStorage.getItem('memberSelectionCounts') || '{}';
+                const obj = JSON.parse(raw);
+                return (obj && typeof obj === 'object') ? obj as Record<string, number> : {};
+            } catch { return {}; }
+        }
+        function incrementSelectionCount(name: string | undefined) {
+            if (!name) return;
+            const counts = getSelectionCounts();
+            counts[name] = (Number.isFinite(counts[name]) ? counts[name] : 0) + 1;
+            localStorage.setItem('memberSelectionCounts', JSON.stringify(counts));
+        }
         let currentButtonTextIndex = 0;
 
         function updateButtonText() {
@@ -65,29 +195,26 @@ import '../styles/global.css';
             }
         }
 
-        function selectNextFacilitator(): string {
-            const availableMembers = teamMembers.filter(member => 
-                !recentFacilitators.includes(member)
-            );
-            
-            if (availableMembers.length === 0) {
-                // If all members have been recent facilitators, reset the list
+        function selectNextFacilitator(): string | undefined {
+            if (!Array.isArray(teamMembers) || teamMembers.length === 0) return undefined;
+            const counts = getSelectionCounts();
+            let candidates = teamMembers.filter((member: string) => !recentFacilitators.includes(member));
+            if (candidates.length === 0) {
                 recentFacilitators = [];
-                return teamMembers[Math.floor(Math.random() * teamMembers.length)];
+                candidates = [...teamMembers];
             }
-            
-            const selectedMember = availableMembers[Math.floor(Math.random() * availableMembers.length)];
-            
-            // Add to recent facilitators and keep only last 3
+            // prioritize by lowest selection count
+            let minCount = Infinity;
+            candidates.forEach((name) => { const c = Number.isFinite(counts[name]) ? counts[name] : 0; if (c < minCount) minCount = c; });
+            const lowest = candidates.filter((name) => (Number.isFinite(counts[name]) ? counts[name] : 0) === minCount);
+            const selectedMember = lowest[Math.floor(Math.random() * lowest.length)];
+            // track recency window of 3
             recentFacilitators.push(selectedMember);
-            if (recentFacilitators.length > 3) {
-                recentFacilitators.shift();
-            }
-            
+            if (recentFacilitators.length > 3) { recentFacilitators.shift(); }
             return selectedMember;
         }
 
-        function showFacilitator(facilitator: string) {
+        function showFacilitator(facilitator) {
             if (facilitatorDisplay) {
                 facilitatorDisplay.textContent = `Next Facilitator: ${facilitator}`;
                 facilitatorDisplay.classList.add('show');
@@ -103,9 +230,66 @@ import '../styles/global.css';
             }
         }
 
+        async function fetchPeople() {
+            try {
+                const res = await fetch('/api/people');
+                if (!res.ok) throw new Error('Failed to load people');
+                const people: unknown = await res.json();
+                if (Array.isArray(people) && people.length > 0) {
+                    teamMembers = dedupeStrings(people as unknown[]);
+                    localStorage.setItem('teamMembers', JSON.stringify(teamMembers));
+                } else {
+                    const local = JSON.parse(localStorage.getItem('teamMembers') || '[]') as unknown;
+                    teamMembers = Array.isArray(local) ? (local as string[]) : [];
+                }
+            } catch (e) {
+                const fallback = JSON.parse(localStorage.getItem('teamMembers') || '[]') as unknown;
+                teamMembers = Array.isArray(fallback) ? (fallback as string[]) : [];
+            }
+        }
+
+        function dedupeStrings(arr: unknown[]): string[] {
+            const set = new Set<string>();
+            arr.forEach((s) => {
+                const v = String(s as unknown).trim();
+                if (v) set.add(v);
+            });
+            return Array.from(set);
+        }
+
+        // no inline member editing on this page
+
+        // Initialize topic from URL if present
+        const urlParams = new URLSearchParams(window.location.search as string);
+        const initialTopic = urlParams.get('topic');
+        if (initialTopic && topicSelect) {
+            topicSelect.value = initialTopic;
+        }
+
+        // Apply initial theme
+        currentTopic = (topicSelect?.value as string) || 'general';
+        buttonTexts = topicButtonTexts[currentTopic] || topicButtonTexts.general;
+        applyTheme(currentTopic);
+
+        if (topicSelect) {
+            topicSelect.addEventListener('change', (event: Event) => {
+                const selectedTopic = (event.target as HTMLSelectElement).value;
+                currentTopic = selectedTopic;
+                buttonTexts = topicButtonTexts[currentTopic] || topicButtonTexts.general;
+                currentButtonTextIndex = 0;
+                updateButtonText();
+                applyTheme(selectedTopic);
+                const params = new URLSearchParams(window.location.search);
+                params.set('topic', selectedTopic);
+                const newUrl = `${window.location.pathname}?${params.toString()}`;
+                window.history.replaceState({}, '', newUrl);
+            });
+        }
+
         if (questionDisplay && newQuestionBtn && loader && facilitatorDisplay) {
             // Initialize button text
             updateButtonText();
+            fetchPeople();
 
             newQuestionBtn.addEventListener('click', async () => {
                 // Show loader and hide text
@@ -118,28 +302,10 @@ import '../styles/global.css';
                 animatePage();
 
                 try {
-                    // Get API key from environment variable
-                    const GEMINI_API_KEY = import.meta.env.PUBLIC_GEMINI_API_KEY;
-                    
-                    // Check if API key is available
-                    if (!GEMINI_API_KEY) {
-                        throw new Error('Gemini API key is not configured. Please set the PUBLIC_GEMINI_API_KEY environment variable.');
-                    }
-
-                    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
-                    
-                    const questionPrompt = "Generate one, and only one, fun and lighthearted icebreaker question suitable for a professional team meeting. Do not add any preamble, quotation marks, or extra text. Just the question itself.";
-
-                    const response = await fetch(API_URL, {
+                    const response = await fetch('/api/generate-question', { 
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            contents: [{
-                                parts: [{ text: questionPrompt }]
-                            }]
-                        })
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ topic: (topicSelect?.value as string) || 'general' })
                     });
 
                     if (!response.ok) {
@@ -149,12 +315,18 @@ import '../styles/global.css';
                     }
 
                     const data = await response.json();
-                    const question = data.candidates[0].content.parts[0].text.trim();
+                    const question = (data && data.question) ? String(data.question).trim() : '';
                     questionDisplay.textContent = question;
 
-                    // Select and show next facilitator
-                    const nextFacilitator = selectNextFacilitator();
-                    showFacilitator(nextFacilitator);
+                    // Select and show next facilitator (only if we have people)
+                    if (Array.isArray(teamMembers) && teamMembers.length > 0) {
+                        const nextFacilitator = selectNextFacilitator();
+                        incrementSelectionCount(nextFacilitator);
+                        showFacilitator(nextFacilitator);
+                    } else if (facilitatorDisplay) {
+                        facilitatorDisplay.textContent = 'Add team members in Manage members to enable facilitator selection.';
+                        facilitatorDisplay.classList.add('show');
+                    }
 
                     // Update button text
                     updateButtonText();

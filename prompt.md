@@ -1,4 +1,4 @@
-I have an existing Astro application in the current workspace. Please read and understand the code workspace.
+**I have an existing Astro application in the current workspace. Please read and understand the code workspace.
 
 You are an expert frontend developer. Ensuring best practices, your task is to apply the following modifications based on my team's feedback to change the app's "vibe".
 
@@ -16,4 +16,4 @@ When hover over the button, an animation pops up to excite user to click the but
 Text of the button should change after every click. It should always be 3-4 words from pop songs, containing a verb and a noun
 
 3. **For the "New Feature" (from Team 3):**
-Upon generating a new question, randomly generate the person who will facilitate the next check in, excluding the most recent three names
+Upon generating a new question, randomly generate the person who will facilitate the next check in, excluding the most recent three **names**
