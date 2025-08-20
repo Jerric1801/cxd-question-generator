@@ -2,7 +2,8 @@ import { getStore } from '@netlify/blobs';
 
 const STORE_NAME = 'people-list';
 const KEY = 'people.json';
-const IS_DEV = process.env.NETLIFY_DEV === 'true';
+const IS_NETLIFY = process.env.NETLIFY === 'true';
+const IS_NETLIFY_DEV = process.env.NETLIFY_DEV === 'true';
 let DEV_MEMORY = [];
 
 export const handler = async (event) => {
@@ -21,9 +22,11 @@ export const handler = async (event) => {
   try {
     store = getStore(STORE_NAME);
   } catch (e) {
-    if (!IS_DEV) {
+    // In Netlify production/preview (not dev), surface the error; otherwise fall back to in-memory store
+    if (IS_NETLIFY && !IS_NETLIFY_DEV) {
       return { statusCode: 500, headers, body: JSON.stringify({ error: 'Storage initialization failed' }) };
     }
+    store = undefined;
   }
 
   if (event.httpMethod === 'GET') {
@@ -35,7 +38,10 @@ export const handler = async (event) => {
       const value = Array.isArray(json) ? sanitize(json) : [];
       return { statusCode: 200, headers, body: JSON.stringify(value) };
     } catch (e) {
-      if (IS_DEV) {
+      if (!store) {
+        return { statusCode: 200, headers, body: JSON.stringify(DEV_MEMORY) };
+      }
+      if (IS_NETLIFY_DEV) {
         return { statusCode: 200, headers, body: JSON.stringify(DEV_MEMORY) };
       }
       return { statusCode: 500, headers, body: JSON.stringify({ error: 'Failed to read storage' }) };
@@ -68,7 +74,7 @@ export const handler = async (event) => {
       await store.set(KEY, JSON.stringify(cleaned));
       return { statusCode: 200, headers, body: JSON.stringify({ ok: true }) };
     } catch (e) {
-      if (IS_DEV) {
+      if (!store || IS_NETLIFY_DEV) {
         DEV_MEMORY = cleaned;
         return { statusCode: 200, headers, body: JSON.stringify({ ok: true, dev: true }) };
       }

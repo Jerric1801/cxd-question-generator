@@ -27,7 +27,7 @@ export const handler = async (event) => {
       };
     }
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
     const prompt = buildPrompt(topic);
 
     const resp = await fetch(url, {
@@ -61,139 +61,60 @@ function corsHeaders() {
   };
 }
 
+// --- Helper: pick a random item from an array ---
+function pickRandom(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+// --- Creative Sparks: broader and more evocative themes ---
+const creativeThemes = {
+  singapore: [
+    'the feeling of community',
+    'a hidden gem',
+    'an everyday moment',
+    'a sense of nostalgia',
+    "the city's unique energy",
+    'a comfort food memory'
+  ],
+  wellness: [
+    'a moment of calm',
+    'a feeling of gratitude',
+    'a way to recharge energy',
+    'a peaceful observation',
+    'a simple pleasure'
+  ],
+  collaboration: [
+    'learning from a teammate',
+    'a moment of genuine support',
+    'celebrating a shared success',
+    'the spark of a new idea',
+    'a feeling of trust',
+    'overcoming a challenge together'
+  ],
+  general: [
+    'a small joy',
+    'a fond memory',
+    'a moment of surprise',
+    'a burst of creativity',
+    'a feeling of comfort',
+    'a new perspective'
+  ]
+};
+
 function buildPrompt(topic) {
   const normalizedTopic = typeof topic === 'string' ? topic.toLowerCase() : 'general';
   const topicSynonyms = { team: 'collaboration' };
   const synonymOrOriginal = Object.prototype.hasOwnProperty.call(topicSynonyms, normalizedTopic)
     ? topicSynonyms[normalizedTopic]
     : normalizedTopic;
-  const resolvedTopic = Object.prototype.hasOwnProperty.call(promptIngredients, synonymOrOriginal)
+
+  const currentTopic = Object.prototype.hasOwnProperty.call(creativeThemes, synonymOrOriginal)
     ? synonymOrOriginal
     : 'general';
+  const randomTheme = pickRandom(creativeThemes[currentTopic]);
 
-  const topicSpec = promptIngredients[resolvedTopic];
-  const selectedSubTopic = pickRandom(topicSpec.subTopics);
-  const selectedFormat = pickRandom(topicSpec.formats);
-  const selectedTone = pickRandom(topicSpec.tones);
-  const constraint = maybeConstraint(resolvedTopic);
-
-  const prompt = `Generate one, and only one, icebreaker question suitable for a professional team meeting. Topic: "${resolvedTopic}". Specifically, craft ${selectedFormat} ${selectedSubTopic}. Use a ${selectedTone} tone that is inclusive and engaging. ${constraint} Do not include any preamble, numbering, quotation marks, or explanations. Output only the question.`;
+  const prompt = `Act as a creative facilitator. Your task is to generate one simple and thought-provoking icebreaker question. The goal is to spark a wholesome and personal conversation that helps team members connect. Use the following theme as your creative inspiration: "${randomTheme}". Important: Do not use the exact words from the theme in your question. Instead, interpret the feeling behind it. The final question should be short, open-ended, and easy to answer. Output only the question.`;
 
   return prompt.trim().replace(/\s+/g, ' ');
-}
-
-// --- Dynamic prompt "recipe" ingredients ---
-const promptIngredients = {
-  singapore: {
-    subTopics: [
-      'local food',
-      'Singlish quirks',
-      'a specific neighborhood',
-      'public transport',
-      'childhood snacks',
-      'hawker centres',
-      'local architecture',
-      'festivals and holidays'
-    ],
-    formats: [
-      'a question about an unpopular opinion on',
-      'a "what if" question about',
-      'a nostalgic question about',
-      'a question that compares',
-      'a fun fact question about',
-      'a recommendation question about'
-    ],
-    tones: ['humorous', 'nostalgic', 'quirky', 'thought-provoking']
-  },
-  wellness: {
-    subTopics: [
-      'a small daily ritual',
-      'a way to de-stress',
-      'a non-screen activity',
-      'a moment of gratitude',
-      'a favorite type of music for focus',
-      'a simple mindfulness practice',
-      'supportive habits at work'
-    ],
-    formats: [
-      'a question asking to share',
-      'a question about a recent discovery related to',
-      'a gentle question about a personal preference for',
-      'a forward-looking question about',
-      'a reflection question about'
-    ],
-    tones: ['calm', 'encouraging', 'warm', 'uplifting']
-  },
-  collaboration: {
-    subTopics: [
-      'a recent team win',
-      'a learning from a mistake',
-      'a way to give better feedback',
-      'a moment of great teamwork',
-      'a tool that helps collaboration',
-      'improving meetings',
-      'sharing context efficiently'
-    ],
-    formats: [
-      'a reflective question about',
-      'a question that seeks a story about',
-      'a question that asks for a practical tip on',
-      'a hypothetical scenario question about',
-      'a question that compares approaches to'
-    ],
-    tones: ['practical', 'optimistic', 'curious', 'constructive']
-  },
-  general: {
-    subTopics: [
-      'a favorite movie',
-      'a hidden talent',
-      'a dream vacation',
-      'a first concert',
-      'a book that changed your perspective',
-      'a favorite board game',
-      'a hobby you picked up recently'
-    ],
-    formats: [
-      'a fun "would you rather" question involving',
-      'a question about the best part of',
-      'a question asking for a recommendation on',
-      'a "desert island" question about',
-      'a question comparing two choices related to'
-    ],
-    tones: ['playful', 'curious', 'lighthearted', 'whimsical']
-  }
-};
-
-// --- Negative constraints to reduce repetition of common answers ---
-const negativeConstraints = {
-  singapore: [
-    'Avoid mentioning chilli crab or chicken rice.',
-    'Do not reference the Merlion or Marina Bay Sands.',
-    'Avoid naming HDB or ERP explicitly.'
-  ],
-  wellness: [
-    'Avoid suggesting meditation or yoga.',
-    'Do not mention step counters or specific calorie goals.'
-  ],
-  collaboration: [
-    'Avoid mentioning stand-up meetings or retrospectives by name.',
-    'Do not reference specific tools like Slack or Jira.'
-  ],
-  general: [
-    'Avoid clichéd topics like coffee or pizza.',
-    'Do not ask about cats versus dogs.'
-  ]
-};
-
-function maybeConstraint(topic) {
-  const roll = Math.random();
-  if (roll < 0.35 && Object.prototype.hasOwnProperty.call(negativeConstraints, topic)) {
-    return pickRandom(negativeConstraints[topic]);
-  }
-  return '';
-}
-
-function pickRandom(arr) {
-  return arr[Math.floor(Math.random() * arr.length)];
 }
 
